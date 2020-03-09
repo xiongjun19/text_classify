@@ -17,7 +17,7 @@ from text_classify import metrics
 
 class Trainer(object):
     def __init__(self, args):
-        if args.emb_opt != 'rand':
+        if args.emb_opt == 'rand':
             self.tokenizer = jieba_tokenizer.JiebaTokenizer(args.train_path, args.test_path, None)
         else:
             self.tokenizer = jieba_tokenizer.JiebaTokenizer(None, None, args.emb_file)
@@ -25,7 +25,7 @@ class Trainer(object):
             args.emb_dim = self.tokenizer.dim
             args.vocab_size = len(self.tokenizer.itos)
             if self.tokenizer.vecs is not None:
-                args.weights = torch.from_numpy(np.array(self.tokenizer.vecs))
+                args.weights = torch.from_numpy(np.array(self.tokenizer.vecs, dtype=np.float))
             else:
                 args.weights = None
         self.model = TextCNN(args)

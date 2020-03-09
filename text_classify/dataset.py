@@ -80,9 +80,10 @@ def fix_padding(batch, upper_bound=512):
 
 
 def _pad_and_convert(tok_ids_arr, labels, text, seq_lens, max_len):
+    # import ipdb; ipdb.set_trace()
     padded_tok_arr = []
     for i, tok_ids in enumerate(tok_ids_arr):
-        if tok_ids >= max_len:
+        if len(tok_ids) >= max_len:
             padded_tok_arr.append(tok_ids[:max_len])
         else:
             tmp_arr = tok_ids + (max_len - len(tok_ids)) * [0]

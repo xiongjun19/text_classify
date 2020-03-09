@@ -28,14 +28,14 @@ class JiebaTokenizer(BaseTokenizer):
     def convert_tokens_to_ids(self, tokens):
         result = [0] * len(tokens)
         for i, word in enumerate(tokens):
-            idx = self.stoi.get(word, '[UNK]')
+            idx = self.stoi.get(word, self.stoi['[UNK]'])
             result[i] = idx
         return result
 
     def _construct_dict(self, train_file, dev_file):
         train_words = self._read_words(train_file)
         dev_words = self._read_words(dev_file)
-        words = train_words + dev_words
+        words = train_words | dev_words
         itos = dict()
         for i, word in enumerate(sorted(words)):
             itos[i + len(self.reserve_toks)] = word

@@ -26,10 +26,11 @@ class TextCNN(nn.Module):
     def forward(self, input_ids):
         x = self.emb_layer(input_ids)
         x = x.unsqueeze(1)
-        x = [F.relu(conv(x)).squeeze(3) for conv in self.convs]
+        x = [F.relu(conv(x)).squeeze(3) for conv in self.conv_list]
         x = [F.max_pool1d(item, item.size(2)).squeeze(2) for item in x]
         x = torch.cat(x, 1)
-        x = self.dropout(x)
+        if self.dropout is not None:
+            x = self.dropout(x)
         logits = self.fc(x)
         return logits
 
@@ -37,7 +38,7 @@ class TextCNN(nn.Module):
 class WordEmbeddings(nn.Module):
     def __init__(self, vocab_size, dim, weights, freeze=True, max_pos=None, dropout=0.):
         super(WordEmbeddings, self).__init__()
-        self.word_embedding = nn.Embedding(vocab_size, dim, _weight=weights)
+        self.word_embedding = nn.Embedding(vocab_size, dim, _weight=weights.float())
         self.word_embedding.weight.requires_grad = not freeze
         self.pos_embedding = None
         if max_pos is not None:
@@ -55,7 +56,7 @@ class WordEmbeddings(nn.Module):
             pos_ids = pos_ids.unsqueeze(0).expand_as(input_ids)
             pos_emb = self.pos_embedding(pos_ids)
             embeddings += pos_emb
-        if self.droput is not None:
+        if self.dropout is not None:
             embeddings = self.dropout(embeddings)
         return embeddings
 
