@@ -38,9 +38,10 @@ class Trainer(object):
         optimizer = torch.optim.SGD([
             {"params": self.model.parameters(), "lr": lr}
         ])
+        scheduler = torch.optim.CyclicLR(optimizer, base_lr=1e-5, max_lr=1e-2, step_size_up=1000)
         criterion = F.cross_entropy
         for epoch in tqdm(range(epochs)):
-            self.train_epoch(train_loader, test_loader, optimizer, criterion,  epoch)
+            self.train_epoch(train_loader, test_loader, optimizer, scheduler, criterion,  epoch)
             print(f"following is test metrics at epoch {epoch}")
             acc, f1_score = self.evaluate(test_loader)
             print(f"accuracy of the model is: {acc}")
@@ -68,7 +69,7 @@ class Trainer(object):
         f1_score = sum(f1_arr) / len(f1_arr) if len(f1_arr) > 0 else -1
         return acc_score, f1_score
 
-    def train_epoch(self, train_loader, test_loader, optmizer, criterion,  epoch):
+    def train_epoch(self, train_loader, test_loader, optmizer, scheduler, criterion,  epoch):
         self.model.train()
         for step, batch in enumerate(train_loader):
             self.model.zero_grad()
@@ -78,6 +79,7 @@ class Trainer(object):
             logits = self.model(x)
             loss = criterion(logits, y)
             loss.backward()
+            scheduler.step()
             optmizer.step()
             if step % 10 == 0:
                 print(f"training loss is: {loss.cpu().item()} @step:{step}, @epoch: {epoch}")
