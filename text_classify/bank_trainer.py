@@ -96,7 +96,7 @@ class Trainer(object):
         train_ds = dataset.RawDataSet(self.tokenizer, train_texts, train_labels)
         test_ds = dataset.RawDataSet(self.tokenizer, test_texts, test_labels)
         train_loader = dataloader.DataLoader(train_ds, batch_size=batch_size, shuffle=True,
-                                            collate_fn=lambda x: dataset.fix_padding(x))
+                                             collate_fn=lambda x: dataset.fix_padding(x))
         test_loader = dataloader.DataLoader(test_ds, batch_size=batch_size, shuffle=True,
                                             collate_fn=lambda x: dataset.fix_padding(x))
         return train_loader, test_loader, label_dict
@@ -106,7 +106,7 @@ class Trainer(object):
         if label_dict is None:
             label_dict = dict([(elem, i) for i, elem in enumerate(sorted(set(raw_labels)))])
         Y = [label_dict[raw_label] for raw_label in raw_labels]
-        return texts, Y, label_dict
+        return texts, np.array(Y), label_dict
 
     @staticmethod
     def read_excel(f_path, title_key="标题", label_key="信息性质", link_key="网址"):
@@ -114,7 +114,7 @@ class Trainer(object):
         raw_title = df[title_key]
         labels = df[label_key]
         links = df[link_key]
-        return raw_title, labels, links
+        return raw_title.values, labels.values, links.values
 
 
 def parse_args():
