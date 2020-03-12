@@ -42,7 +42,7 @@ class WordEmbeddings(nn.Module):
         self.word_embedding.weight.requires_grad = not freeze
         self.pos_embedding = None
         if max_pos is not None:
-            self.pos_embedding = nn.Embedding(vocab_size, dim)
+            self.pos_embedding = nn.Embedding(max_pos, dim)
         self.dropout = None
         if dropout > 0.:
             self.dropout = nn.Dropout(dropout)
@@ -67,7 +67,7 @@ class RandEmbedding(nn.Module):
         self.word_embedding = nn.Embedding(vocab_size, dim)
         self.pos_embedding = None
         if max_pos is not None and max_pos > 0:
-            self.pos_embedding = nn.Embedding(vocab_size, dim)
+            self.pos_embedding = nn.Embedding(max_pos, dim)
         self.dropout = None
         if dropout > 0.:
             self.dropout = nn.Dropout(dropout)

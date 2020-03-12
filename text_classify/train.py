@@ -38,7 +38,7 @@ class Trainer(object):
         optimizer = torch.optim.SGD([
             {"params": self.model.parameters(), "lr": lr}
         ])
-        scheduler = torch.optim.CyclicLR(optimizer, base_lr=1e-5, max_lr=1e-2, step_size_up=1000)
+        scheduler = torch.optim.lr_scheduler.CyclicLR(optimizer, base_lr=1e-5, max_lr=1e-2, step_size_up=1000)
         criterion = F.cross_entropy
         for epoch in tqdm(range(epochs)):
             self.train_epoch(train_loader, test_loader, optimizer, scheduler, criterion,  epoch)
