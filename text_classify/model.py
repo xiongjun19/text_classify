@@ -1,8 +1,10 @@
 # coding=utf8
 
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from pytorch_pretrained_bert import BertModel
 
 
 class TextCNN(nn.Module):
@@ -84,3 +86,26 @@ class RandEmbedding(nn.Module):
         if self.droput is not None:
             embeddings = self.dropout(embeddings)
         return embeddings
+
+
+class BertClassfication(nn.Module):
+    def __init__(self, args):
+        self.bert = BertModel.from_pretrained(os.getenv('BERT_BASE_CHINESE'), 'bert-base-chinese')
+        self.linear = nn.Linear(768, args.class_num)
+        self.finetuning = args.finetuning
+        self.dropout = None
+        if args.dropout > 0:
+            self.dropout = nn.Dropout(args.dropout)
+
+    def forward(self, x):
+        if self.training and self.finetuning:
+            self.bert.train()
+            _, bert_cls = self.bert(x)
+        else:
+            self.bert.eval()
+            with torch.no_grad():
+                _, bert_cls = self.bert(x)
+        if self.dropout is not None:
+            bert_cls = self.dropout(bert_cls)
+        logits = self.linear(bert_cls)
+        return logits
