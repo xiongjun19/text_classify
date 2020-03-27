@@ -90,9 +90,11 @@ class RandEmbedding(nn.Module):
 
 class BertClassfication(nn.Module):
     def __init__(self, args):
-        self.bert = BertModel.from_pretrained(os.getenv('BERT_BASE_CHINESE'), 'bert-base-chinese')
+        super(BertClassfication, self).__init__()
+        self.bert = BertModel.from_pretrained(os.getenv('BERT_BASE_CHINESE', 'bert-base-chinese'))
         self.hidden_dim = 256
         self.linear = nn.Linear(768, self.hidden_dim)
+        self.activation = nn.ReLU(inplace=True)
         self.linear_cls = nn.Linear(self.hidden_dim, args.class_num)
         self.finetuning = args.finetuning
         self.dropout = None
@@ -110,6 +112,7 @@ class BertClassfication(nn.Module):
         sequence_output = encoded_layers[-1]
         first_token = sequence_output[:, 0]
         hidden = self.linear(first_token)
+        hidden = self.activation(hidden)
         if self.dropout is not None:
             hidden = self.dropout(hidden)
         logits = self.linear_cls(hidden)
