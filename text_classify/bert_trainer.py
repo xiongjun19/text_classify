@@ -15,16 +15,20 @@ from text_classify.model import BertClassfication
 from text_classify.utils import file_helper
 from text_classify import dataset
 from text_classify import metrics
+from torch.utils.tensorboard import SummaryWriter
+
+glob_iters = 0
 
 
 class Trainer(object):
     def __init__(self, args):
 
         self.tokenizer = BertTokenizer.from_pretrained(os.getenv("BERT_BASE_CHINESE_VOCAB", "bert-base-chinese"),
-                                                       do_lower_case=True)(None, None, args.emb_file)
+                                                       do_lower_case=True)
         self.model = BertClassfication(args)
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.model.to(self.device)
+        self.sm_writer = SummaryWriter(args.logdir)
 
     def train(self, train_path, test_path, epochs, model_path, lr, batch_size):
         train_loader, test_loader, label_dict = self.get_data_loader(train_path, batch_size=batch_size)
@@ -39,11 +43,18 @@ class Trainer(object):
             acc, f1_score = self.evaluate(test_loader)
             print(f"accuracy of the model is: {acc}")
             print(f"f1 score is: {f1_score}")
+            self._write_metric([acc, f1_score])
             print(f"following is train metrics at epoch {epoch}")
             acc, f1_score = self.evaluate(train_loader)
             print(f"accuracy of the model is: {acc}")
             print(f"f1 score is: {f1_score}")
+            self._write_metric([acc, f1_score])
             torch.save(self.model.state_dict(), model_path)
+
+    def _write_metric(self, metric_info, epoch, sign="test"):
+        acc, f1 = metric_info
+        self.sm_writer.add_scalar(f'precision/{sign}', acc, epoch)
+        self.sm_writer.add_scalar(f'f1/{sign}', f1, epoch)
 
     def evaluate(self, _loader):
         self.model.eval()
@@ -63,6 +74,7 @@ class Trainer(object):
         return acc_score, f1_score
 
     def train_epoch(self, train_loader, test_loader, optmizer, scheduler, criterion,  epoch):
+        global glob_iters
         self.model.train()
         for step, batch in enumerate(train_loader):
             self.model.zero_grad()
@@ -74,8 +86,11 @@ class Trainer(object):
             loss.backward()
             scheduler.step()
             optmizer.step()
+            glob_iters += 1
             if step % 10 == 0:
                 print(f"training loss is: {loss.cpu().item()} @step:{step}, @epoch: {epoch}")
+                self.sm_writer.add_scalar("loss/train", loss.cpu().item(), glob_iters)
+                self.sm_writer.add_scalar("lr/train", optmizer.param_groups[0]["lr"], glob_iters)
 
     def get_data_loader(self, f_path, batch_size, label_dict=None):
         np.random.seed(5)
@@ -121,10 +136,9 @@ def parse_args():
     parser.add_argument("--epochs", default=30, type=int, help="epochs")
     parser.add_argument("--eval_steps", default=10, type=int, help="interval to evaluate")
     parser.add_argument("--batch_size", default=64, type=int)
-
+    parser.add_argument("--logdir", default=file_helper.get_data_file("log/bert_log"), type=str)
+    parser.add_argument("--finetuing", type=bool, default=False)
     args = parser.parse_args()
-    filter_sizes = list(map(int, args.filter_sizes.split(",")))
-    args.filter_sizes = filter_sizes
     return args
 
 

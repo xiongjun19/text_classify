@@ -1,0 +1,12 @@
+pytorch-pretrained-bert==0.6.2
+scikit-learn==0.22.2.post1
+torch==1.2.0
+torchvision==0.4.0
+tqdm==4.42.1
+xlrd==1.2.0
+ipdb==0.12.3
+jieba==0.42.1
+numpy==1.18.1
+pandas==1.0.1
+future==0.18.2
+tensorboard==2.2.0

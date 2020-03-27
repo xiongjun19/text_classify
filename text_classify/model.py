@@ -111,9 +111,9 @@ class BertClassfication(nn.Module):
                 encoded_layers, _ = self.bert(x)
         sequence_output = encoded_layers[-1]
         first_token = sequence_output[:, 0]
-        hidden = self.linear(first_token)
-        hidden = self.activation(hidden)
         if self.dropout is not None:
-            hidden = self.dropout(hidden)
+            hidden = self.dropout(first_token)
+        hidden = self.linear(hidden)
+        hidden = self.activation(hidden)
         logits = self.linear_cls(hidden)
         return logits
