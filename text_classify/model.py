@@ -91,7 +91,9 @@ class RandEmbedding(nn.Module):
 class BertClassfication(nn.Module):
     def __init__(self, args):
         self.bert = BertModel.from_pretrained(os.getenv('BERT_BASE_CHINESE'), 'bert-base-chinese')
-        self.linear = nn.Linear(768, args.class_num)
+        self.hidden_dim = 256
+        self.linear = nn.Linear(768, self.hidden_dim)
+        self.linear_cls = nn.Linear(self.hidden_dim, args.class_num)
         self.finetuning = args.finetuning
         self.dropout = None
         if args.dropout > 0:
@@ -100,12 +102,15 @@ class BertClassfication(nn.Module):
     def forward(self, x):
         if self.training and self.finetuning:
             self.bert.train()
-            _, bert_cls = self.bert(x)
+            encoded_layers, _ = self.bert(x)
         else:
             self.bert.eval()
             with torch.no_grad():
-                _, bert_cls = self.bert(x)
+                encoded_layers, _ = self.bert(x)
+        sequence_output = encoded_layers[-1]
+        first_token = sequence_output[:, 0]
+        hidden = self.linear(first_token)
         if self.dropout is not None:
-            bert_cls = self.dropout(bert_cls)
-        logits = self.linear(bert_cls)
+            hidden = self.dropout(hidden)
+        logits = self.linear_cls(hidden)
         return logits
