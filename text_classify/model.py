@@ -117,3 +117,38 @@ class BertClassfication(nn.Module):
         hidden = self.activation(hidden)
         logits = self.linear_cls(hidden)
         return logits
+
+
+class TextRCNN(nn.Module):
+    def __init__(self, args):
+        super(TextRCNN, self).__init__()
+        if args.emb_opt == "rand":
+            self.emb_layer = RandEmbedding(args.vocab_size, args.emb_dim, args.dropout)
+        else:
+            self.emb_layer = WordEmbeddings(args.vocab_size, args.emb_dim, args.weights,
+                                            freeze=args.emb_freeze, dropout=args.dropout)
+        filter_sizes = args.filter_sizes
+        out_channel = args.out_channel
+        self.rnn = nn.GRU(
+            args.emb_dim, args.hidden_dim, num_layers=2, bias=True,
+            batch_first=True, dropout=args.dropout, bidirectional=True)
+
+        self.conv_list = nn.ModuleList(
+            [nn.Conv2d(1, out_channel, (size, args.hidden_dim * 2)) for size in filter_sizes]
+        )
+        self.dropout = None
+        if args.dropout > 0.:
+            self.dropout = nn.Dropout(args.dropout)
+        self.fc = nn.Linear(len(filter_sizes) * out_channel, args.class_num)
+
+    def forward(self, input_ids):
+        x = self.emb_layer(input_ids)
+        x, _ = self.rnn(x)
+        x = x.unsqueeze(1)
+        x = [F.relu(conv(x)).squeeze(3) for conv in self.conv_list]
+        x = [F.max_pool1d(item, item.size(2)).squeeze(2) for item in x]
+        x = torch.cat(x, 1)
+        if self.dropout is not None:
+            x = self.dropout(x)
+        logits = self.fc(x)
+        return logits

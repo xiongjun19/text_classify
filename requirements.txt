@@ -1,5 +1,5 @@
 pytorch-pretrained-bert==0.6.2
-scikit-learn==0.22.2.post1
+scikit-learn==0.22.2
 torch==1.2.0
 torchvision==0.4.0
 tqdm==4.42.1

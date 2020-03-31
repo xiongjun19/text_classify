@@ -89,3 +89,33 @@ def _pad_and_convert(tok_ids_arr, labels, text, seq_lens, max_len):
             tmp_arr = tok_ids + (max_len - len(tok_ids)) * [0]
             padded_tok_arr.append(tmp_arr)
     return torch.LongTensor(padded_tok_arr), torch.LongTensor(labels), text, seq_lens
+
+
+class BertDataSet(DatasetMixin):
+    START_TAG = '[CLS]'
+    STOP_TAG = '[SEP]'
+
+    def __init__(self, tokenizer, texts, labels=None):
+        """
+        :param tokenizer:
+        :param texts:  这里的texts 是原始文本
+        :param labels: 这里的labels
+        """
+        super(RawDataSet, self).__init__()
+        self.tokenizer = tokenizer
+        self.texts = texts
+        self.labels = labels
+
+    def __len__(self):
+        return len(self.texts)
+
+    def get_example(self, i):
+        text = self.texts[i]
+        label = self.labels[i]
+        tokens = self.tokenizer.tokenize(text)
+        if not tokens:
+            tokens = ["[UNK]"]
+        tokens = [self.START_TAG] + tokens + [self.STOP_TAG]
+        tok_ids = self.tokenizer.convert_tokens_to_ids(tokens)
+        seq_len = len(tokens)
+        return tok_ids, label, text, seq_len

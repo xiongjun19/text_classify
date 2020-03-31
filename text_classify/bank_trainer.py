@@ -43,19 +43,23 @@ class Trainer(object):
         for epoch in tqdm(range(epochs)):
             self.train_epoch(train_loader, test_loader, optimizer, scheduler, criterion,  epoch)
             print(f"following is test metrics at epoch {epoch}")
-            acc, f1_score = self.evaluate(test_loader)
+            acc, f1_score,cm = self.evaluate(test_loader)
             print(f"accuracy of the model is: {acc}")
             print(f"f1 score is: {f1_score}")
+            print(f"confusion matrix is: {cm}")
             print(f"following is train metrics at epoch {epoch}")
-            acc, f1_score = self.evaluate(train_loader)
+            acc, f1_score, cm = self.evaluate(train_loader)
             print(f"accuracy of the model is: {acc}")
             print(f"f1 score is: {f1_score}")
+            print(f"confusion matrix is: {cm}")
             torch.save(self.model.state_dict(), model_path)
 
     def evaluate(self, _loader):
         self.model.eval()
         acc_arr = []
         f1_arr = []
+        y_true = []
+        y_pred = []
         with torch.no_grad():
             for batch in _loader:
                 x, y, _, _ = batch
@@ -63,11 +67,16 @@ class Trainer(object):
                 logits = self.model(x)
                 acc = metrics.calc_accuracy(y, logits)
                 f1 = metrics.calc_f1(y, logits)
+                y_true.append(y)
+                y_pred.append(logits)
                 acc_arr.append(acc)
                 f1_arr.append(f1)
+        y_true = torch.cat(y_true)
+        y_pred = torch.cat(y_pred)
+        cm = metrics.calc_cm(y_true, y_pred)
         acc_score = sum(acc_arr) / len(acc_arr) if len(acc_arr) > 0 else -1
         f1_score = sum(f1_arr) / len(f1_arr) if len(f1_arr) > 0 else -1
-        return acc_score, f1_score
+        return acc_score, f1_score, cm
 
     def train_epoch(self, train_loader, test_loader, optmizer, scheduler, criterion,  epoch):
         self.model.train()
