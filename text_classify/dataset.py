@@ -101,7 +101,7 @@ class BertDataSet(DatasetMixin):
         :param texts:  这里的texts 是原始文本
         :param labels: 这里的labels
         """
-        super(RawDataSet, self).__init__()
+        super(BertDataSet, self).__init__()
         self.tokenizer = tokenizer
         self.texts = texts
         self.labels = labels
